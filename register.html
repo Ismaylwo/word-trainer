@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация - Тренажёр слов</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .logo p {
+            color: #7f8c8d;
+            font-size: 16px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #d1d8e0;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            background-color: #27ae60;
+        }
+        
+        .btn-secondary {
+            background-color: #95a5a6;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+        }
+        
+        .links {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eaeaea;
+        }
+        
+        .links a {
+            color: #3498db;
+            text-decoration: none;
+            display: block;
+            margin: 10px 0;
+        }
+        
+        .links a:hover {
+            text-decoration: underline;
+        }
+        
+        .alert {
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .alert-error {
+            background-color: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #c62828;
+        }
+        
+        .alert-success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #2e7d32;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 10px 0;
+            color: #3498db;
+        }
+        
+        .password-strength {
+            height: 5px;
+            background-color: #ecf0f1;
+            border-radius: 3px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        
+        .password-strength-fill {
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .password-requirements {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1><i class="fas fa-book-open"></i> Тренажёр слов</h1>
+            <p>Создайте новый аккаунт</p>
+        </div>
+        
+        <div id="alert-error" class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i> <span id="error-message"></span>
+        </div>
+        
+        <div id="alert-success" class="alert alert-success">
+            <i class="fas fa-check-circle"></i> <span id="success-message"></span>
+        </div>
+        
+        <div id="loading" class="loading">
+            <i class="fas fa-spinner fa-spin"></i> Загрузка...
+        </div>
+        
+        <form id="register-form">
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Пароль:</label>
+                <input type="password" id="password" required oninput="checkPasswordStrength()">
+                <div class="password-strength">
+                    <div id="password-strength-fill" class="password-strength-fill"></div>
+                </div>
+                <div class="password-requirements">
+                    Пароль должен содержать минимум 6 символов
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="confirm-password">Подтвердите пароль:</label>
+                <input type="password" id="confirm-password" required>
+            </div>
+            
+            <button type="submit" class="btn">
+                <i class="fas fa-user-plus"></i> Зарегистрироваться
+            </button>
+        </form>
+        
+        <div class="links">
+            <a href="login.html"><i class="fas fa-sign-in-alt"></i> Уже есть аккаунт? Войти</a>
+            <a href="index.html"><i class="fas fa-home"></i> На главную</a>
+        </div>
+    </div>
+
+    <script>
+        // Инициализация Supabase клиента для страницы регистрации
+        let supabaseRegister = null;
+        
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('Инициализация страницы регистрации...');
+            
+            // Проверяем, загружена ли библиотека Supabase
+            if (window.supabase) {
+                try {
+                    const SUPABASE_URL = 'https://rgzvbwaizkrtswdiqjog.supabase.co';
+                    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnenZid2FpemtydHN3ZGlxam9nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2NzM4MzgsImV4cCI6MjA4MzI0OTgzOH0.LzFpWSG7pHoAbpIYyLsjbO8YIhh52U8p6hvmeaWILtI';
+                    
+                    supabaseRegister = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    console.log('Supabase клиент создан для страницы регистрации');
+                } catch (error) {
+                    console.error('Ошибка создания Supabase клиента:', error);
+                }
+            } else {
+                console.error('Библиотека Supabase не загружена!');
+            }
+            
+            // Проверяем, авторизован ли пользователь
+            await checkAuth();
+        });
+        
+        const registerForm = document.getElementById('register-form');
+        const alertError = document.getElementById('alert-error');
+        const alertSuccess = document.getElementById('alert-success');
+        const errorMessage = document.getElementById('error-message');
+        const successMessage = document.getElementById('success-message');
+        const loading = document.getElementById('loading');
+        const passwordInput = document.getElementById('password');
+        const passwordStrengthFill = document.getElementById('password-strength-fill');
+        
+        // Проверка сложности пароля
+        function checkPasswordStrength() {
+            const password = passwordInput.value;
+            let strength = 0;
+            
+            if (password.length >= 6) strength += 25;
+            if (password.length >= 8) strength += 25;
+            if (/[A-Z]/.test(password)) strength += 25;
+            if (/[0-9]/.test(password)) strength += 25;
+            
+            passwordStrengthFill.style.width = strength + '%';
+            
+            if (strength < 50) {
+                passwordStrengthFill.style.backgroundColor = '#e74c3c';
+            } else if (strength < 75) {
+                passwordStrengthFill.style.backgroundColor = '#f39c12';
+            } else {
+                passwordStrengthFill.style.backgroundColor = '#2ecc71';
+            }
+        }
+        
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            // Валидация
+            if (!email || !password || !confirmPassword) {
+                showError('Пожалуйста, заполните все поля');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showError('Пароли не совпадают');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showError('Пароль должен содержать минимум 6 символов');
+                return;
+            }
+            
+            loading.style.display = 'block';
+            alertError.style.display = 'none';
+            alertSuccess.style.display = 'none';
+            
+            try {
+                if (!supabaseRegister) {
+                    throw new Error('Не удалось подключиться к серверу. Попробуйте обновить страницу.');
+                }
+                
+                const { data, error } = await supabaseRegister.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        emailRedirectTo: window.location.origin + '/index.html'
+                    }
+                });
+                
+                if (error) throw error;
+                
+                showSuccess('Регистрация успешна! Проверьте вашу почту для подтверждения.');
+                
+                // Очищаем форму
+                registerForm.reset();
+                
+                // Перенаправление на страницу входа через 3 секунды
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Ошибка регистрации:', error.message);
+                
+                if (error.message.includes('already registered')) {
+                    showError('Пользователь с таким email уже зарегистрирован');
+                } else if (error.message.includes('valid email')) {
+                    showError('Введите корректный email адрес');
+                } else {
+                    showError(error.message || 'Ошибка при регистрации');
+                }
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+        
+        function showError(message) {
+            errorMessage.textContent = message;
+            alertError.style.display = 'block';
+            alertSuccess.style.display = 'none';
+        }
+        
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            alertSuccess.style.display = 'block';
+            alertError.style.display = 'none';
+        }
+        
+        // Проверяем, авторизован ли пользователь
+        async function checkAuth() {
+            if (!supabaseRegister) return;
+            
+            try {
+                const { data: { session } } = await supabaseRegister.auth.getSession();
+                
+                if (session) {
+                    // Если уже авторизован, перенаправляем на главную
+                    window.location.href = 'index.html';
+                }
+            } catch (error) {
+                console.error('Ошибка проверки сессии:', error);
+            }
+        }
+    </script>
+</body>
+</html>

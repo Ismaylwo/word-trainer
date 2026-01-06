@@ -1,0 +1,3568 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Тренажёр для заучивания слов (Русский/Таджикский)</title>
+    <!-- Иконки Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        html, body {
+            height: 100%;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 15px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+                align-items: flex-start;
+                padding-top: 20px;
+            }
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+            max-width: 1000px;
+            width: 100%;
+            max-height: 95vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                border-radius: 10px;
+                max-height: none;
+                overflow-y: visible;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background-color: #f8f9fa;
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        @media (max-width: 768px) {
+            .user-info {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background-color: #3498db;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .user-details {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .user-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .user-experience {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        
+        .user-experience span {
+            color: #e67e22;
+            font-weight: bold;
+        }
+        
+        .logout-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background-color: #c0392b;
+        }
+        
+        .leaderboard-section {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 2px solid #eaeaea;
+        }
+        
+        .leaderboard-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .leaderboard-title i {
+            color: #f39c12;
+        }
+        
+        .leaderboard {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .leaderboard {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .leaderboard {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .leaderboard-item {
+            background-color: white;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #eaeaea;
+            text-align: center;
+        }
+        
+        .leaderboard-place {
+            font-weight: bold;
+            font-size: 16px;
+            color: #7f8c8d;
+        }
+        
+        .leaderboard-name {
+            font-weight: 600;
+            margin: 5px 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .leaderboard-exp {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 28px;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 24px;
+                margin-bottom: 8px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 22px;
+            }
+        }
+        
+        .language-tags {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 480px) {
+            .language-tags {
+                gap: 15px;
+                margin-bottom: 15px;
+            }
+        }
+        
+        .language-tag {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 480px) {
+            .language-tag {
+                padding: 6px 12px;
+                font-size: 13px;
+            }
+        }
+        
+        .language-tag-rus {
+            background-color: #e3f2fd;
+            color: #1565c0;
+        }
+        
+        .language-tag-tj {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        @media (max-width: 768px) {
+            .subtitle {
+                font-size: 15px;
+                margin-bottom: 25px;
+                padding: 0 10px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .subtitle {
+                font-size: 14px;
+                margin-bottom: 20px;
+            }
+        }
+        
+        .upload-section {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 2px dashed #d1d8e0;
+        }
+        
+        @media (max-width: 768px) {
+            .upload-section {
+                padding: 15px;
+                margin-bottom: 25px;
+            }
+        }
+        
+        .file-input-container {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        @media (max-width: 480px) {
+            .file-input-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+        
+        .file-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background-color: #3498db;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-weight: 500;
+            width: auto;
+        }
+        
+        @media (max-width: 480px) {
+            .file-label {
+                justify-content: center;
+                padding: 14px 20px;
+            }
+        }
+        
+        .file-label:hover {
+            background-color: #2980b9;
+        }
+        
+        .file-label:active {
+            transform: scale(0.98);
+        }
+        
+        #file-input {
+            display: none;
+        }
+        
+        .file-info {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #7f8c8d;
+            word-break: break-word;
+        }
+        
+        .file-info span {
+            color: #e74c3c;
+            font-weight: 500;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 768px) {
+            .buttons {
+                flex-wrap: wrap;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .buttons {
+                flex-direction: column;
+            }
+        }
+        
+        .mode-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 480px) {
+            .mode-buttons {
+                flex-direction: column;
+            }
+        }
+        
+        .mode-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+            background-color: #f8f9fa;
+            border: 2px solid #d1d8e0;
+            color: #7f8c8d;
+            flex: 1;
+            min-width: 140px;
+        }
+        
+        .mode-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .mode-btn:hover:not(:disabled) {
+            background-color: #e9ecef;
+        }
+        
+        .mode-btn.active {
+            background-color: #9b59b6;
+            border-color: #8e44ad;
+            color: white;
+        }
+        
+        .mode-btn.hardmode.active {
+            background-color: #e74c3c;
+            border-color: #c0392b;
+        }
+        
+        .mode-btn.voicemode.active {
+            background-color: #2ecc71;
+            border-color: #27ae60;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+        
+        @media (max-width: 480px) {
+            button {
+                padding: 14px 20px;
+                font-size: 15px;
+                min-height: 50px;
+            }
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-example {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .btn-example:hover {
+            background-color: #27ae60;
+        }
+        
+        .btn-reset {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .btn-reset:hover {
+            background-color: #c0392b;
+        }
+        
+        .btn-reset:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .card {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            margin: 30px 0;
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eaeaea;
+            position: relative;
+        }
+        
+        @media (max-width: 768px) {
+            .card {
+                padding: 25px 20px;
+                margin: 25px 0;
+                min-height: 200px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .card {
+                padding: 20px 15px;
+                margin: 20px 0;
+            }
+        }
+        
+        .word {
+            font-size: 42px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 768px) {
+            .word {
+                font-size: 36px;
+                margin-bottom: 15px;
+                gap: 12px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .word {
+                font-size: 32px;
+                margin-bottom: 15px;
+                gap: 10px;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            .word {
+                font-size: 28px;
+            }
+        }
+        
+        .input-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .word-input {
+            font-size: 32px;
+            font-weight: 600;
+            padding: 12px 20px;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            outline: none;
+            transition: all 0.3s;
+            font-size: 20px;
+            padding: 10px 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .word-input {
+                font-size: 18px;
+                padding: 8px 12px;
+                max-width: 300px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .word-input {
+                font-size: 16px;
+                padding: 6px 10px;
+                max-width: 100%;
+            }
+        }
+        
+        .word-input::placeholder {
+            color: #95a5a6;
+            font-size: 18px;
+            font-weight: normal;
+        }
+        
+        @media (max-width: 768px) {
+            .word-input::placeholder {
+                font-size: 16px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .word-input::placeholder {
+                font-size: 14px;
+            }
+        }
+        
+        .word-input:focus {
+            border-color: #2980b9;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .word-input.correct {
+            border-color: #2ecc71;
+            background-color: rgba(46, 204, 113, 0.1);
+        }
+        
+        .word-input.incorrect {
+            border-color: #e74c3c;
+            background-color: rgba(231, 76, 60, 0.1);
+        }
+        
+        .input-feedback {
+            font-size: 18px;
+            font-weight: 600;
+            min-height: 30px;
+            margin-top: 5px;
+            text-align: center;
+        }
+        
+        @media (max-width: 480px) {
+            .input-feedback {
+                font-size: 16px;
+            }
+        }
+        
+        .input-feedback.correct {
+            color: #27ae60;
+        }
+        
+        .input-feedback.incorrect {
+            color: #c0392b;
+        }
+        
+        /* Стили для режима тренировки речи */
+        .voice-input-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .voice-instruction {
+            font-size: 16px;
+            color: #7f8c8d;
+            text-align: center;
+            padding: 10px;
+            background-color: #f0f8ff;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            width: 100%;
+            max-width: 500px;
+        }
+        
+        .voice-status {
+            font-size: 18px;
+            font-weight: 600;
+            color: #3498db;
+            min-height: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-align: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .voice-status.recording {
+            color: #e74c3c;
+        }
+        
+        .voice-status.processing {
+            color: #f39c12;
+        }
+        
+        .voice-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            font-size: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+        
+        @media (max-width: 480px) {
+            .voice-btn {
+                width: 70px;
+                height: 70px;
+                font-size: 26px;
+            }
+        }
+        
+        .voice-btn:hover:not(:disabled) {
+            background-color: #2980b9;
+            transform: scale(1.05);
+        }
+        
+        .voice-btn:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+        
+        .voice-btn.recording {
+            background-color: #e74c3c;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .voice-btn.recording:hover {
+            background-color: #c0392b;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+        }
+        
+        .voice-result {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2c3e50;
+            min-height: 40px;
+            text-align: center;
+            padding: 10px 20px;
+            border-radius: 8px;
+            background-color: white;
+            border: 2px dashed #3498db;
+            width: 100%;
+            max-width: 400px;
+            word-break: break-word;
+        }
+        
+        @media (max-width: 480px) {
+            .voice-result {
+                font-size: 20px;
+                padding: 8px 15px;
+                max-width: 100%;
+            }
+        }
+        
+        .voice-result.correct {
+            border-color: #2ecc71;
+            background-color: rgba(46, 204, 113, 0.1);
+        }
+        
+        .voice-result.incorrect {
+            border-color: #e74c3c;
+            background-color: rgba(231, 76, 60, 0.1);
+        }
+        
+        .pronunciation-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #3498db;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            flex-shrink: 0;
+            position: relative;
+        }
+        
+        @media (max-width: 768px) {
+            .pronunciation-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 22px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .pronunciation-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+            }
+        }
+        
+        .pronunciation-btn:hover:not(:disabled) {
+            background-color: rgba(52, 152, 219, 0.1);
+            color: #2980b9;
+        }
+        
+        .pronunciation-btn:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+        
+        .pronunciation-btn.loading {
+            color: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        .pronunciation-btn.loading i {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .translation-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .translation-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        @media (max-width: 480px) {
+            .translation-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+        }
+        
+        .language-label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 600;
+            width: 80px;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        
+        @media (max-width: 480px) {
+            .language-label {
+                width: auto;
+                padding: 4px 10px;
+                border-radius: 4px;
+                background-color: rgba(21, 101, 192, 0.1);
+            }
+        }
+        
+        .language-label-rus {
+            color: #1565c0;
+        }
+        
+        .language-label-tj {
+            color: #2e7d32;
+        }
+        
+        .translation-text {
+            font-size: 28px;
+            min-height: 40px;
+            flex: 1;
+            text-align: left;
+            padding: 8px 0;
+            transition: opacity 0.3s;
+            word-break: break-word;
+        }
+        
+        @media (max-width: 768px) {
+            .translation-text {
+                font-size: 24px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .translation-text {
+                font-size: 22px;
+                min-height: 35px;
+                width: 100%;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            .translation-text {
+                font-size: 20px;
+            }
+        }
+        
+        .translation-text-hidden {
+            opacity: 0;
+        }
+        
+        .translation-text-visible {
+            opacity: 1;
+        }
+        
+        .translation-text-rus {
+            color: #1a73e8;
+        }
+        
+        .translation-text-tj {
+            color: #0d904f;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 15px;
+            color: #7f8c8d;
+            background-color: #f8f9fa;
+            padding: 12px 20px;
+            border-radius: 8px;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 768px) {
+            .stats {
+                padding: 10px 15px;
+                gap: 10px;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .stats {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 15px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-weight: 700;
+            font-size: 18px;
+            color: #2c3e50;
+            margin-top: 2px;
+        }
+        
+        @media (max-width: 480px) {
+            .stat-value {
+                font-size: 16px;
+            }
+        }
+        
+        .card-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 768px) {
+            .card-buttons {
+                flex-wrap: wrap;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .card-buttons {
+                flex-direction: column;
+                gap: 12px;
+            }
+        }
+        
+        .btn-know {
+            background-color: #2ecc71;
+            color: white;
+            padding: 14px 30px;
+            font-size: 18px;
+            min-width: 140px;
+        }
+        
+        @media (max-width: 768px) {
+            .btn-know {
+                padding: 12px 24px;
+                font-size: 16px;
+                min-width: 120px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .btn-know {
+                width: 100%;
+                padding: 14px;
+            }
+        }
+        
+        .btn-know:hover:not(:disabled) {
+            background-color: #27ae60;
+        }
+        
+        .btn-dont-know {
+            background-color: #e74c3c;
+            color: white;
+            padding: 14px 30px;
+            font-size: 18px;
+            min-width: 140px;
+        }
+        
+        @media (max-width: 768px) {
+            .btn-dont-know {
+                padding: 12px 24px;
+                font-size: 16px;
+                min-width: 120px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .btn-dont-know {
+                width: 100%;
+                padding: 14px;
+            }
+        }
+        
+        .btn-dont-know:hover:not(:disabled) {
+            background-color: #c0392b;
+        }
+        
+        .btn-show-translation {
+            background-color: #3498db;
+            color: white;
+            padding: 14px 30px;
+            font-size: 18px;
+            min-width: 180px;
+        }
+        
+        @media (max-width: 768px) {
+            .btn-show-translation {
+                padding: 12px 24px;
+                font-size: 16px;
+                min-width: 150px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .btn-show-translation {
+                width: 100%;
+                padding: 14px;
+                order: -1;
+            }
+        }
+        
+        .btn-show-translation:hover:not(:disabled) {
+            background-color: #2980b9;
+        }
+        
+        .btn-check-answer {
+            background-color: #9b59b6;
+            color: white;
+            padding: 14px 30px;
+            font-size: 18px;
+            min-width: 180px;
+        }
+        
+        .btn-check-answer:hover:not(:disabled) {
+            background-color: #8e44ad;
+        }
+        
+        .btn-next {
+            background-color: #2ecc71;
+            color: white;
+            padding: 14px 30px;
+            font-size: 18px;
+            min-width: 180px;
+        }
+        
+        .btn-next:hover:not(:disabled) {
+            background-color: #27ae60;
+        }
+        
+        .btn-know:disabled, .btn-dont-know:disabled, .btn-show-translation:disabled, 
+        .btn-check-answer:disabled, .btn-next:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+            transform: none !important;
+            opacity: 0.7;
+        }
+        
+        .progress-container {
+            margin-top: 30px;
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            .progress-container {
+                padding: 15px;
+                margin-top: 25px;
+            }
+        }
+        
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .progress-bar {
+            height: 20px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: #2ecc71;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        .alert {
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-weight: 500;
+            display: none;
+        }
+        
+        .alert-error {
+            background-color: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #c62828;
+        }
+        
+        .alert-info {
+            background-color: #e3f2fd;
+            color: #1565c0;
+            border-left: 4px solid #1565c0;
+        }
+        
+        .alert-success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #2e7d32;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+            color: #3498db;
+            font-weight: 500;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #7f8c8d;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        @media (max-width: 480px) {
+            .footer {
+                font-size: 13px;
+                margin-top: 25px;
+            }
+        }
+        
+        .format-info {
+            background-color: #fff8e1;
+            border-radius: 6px;
+            padding: 12px 15px;
+            margin-top: 15px;
+            font-size: 14px;
+            border-left: 4px solid #ffb300;
+        }
+        
+        @media (max-width: 768px) {
+            .format-info {
+                font-size: 13px;
+                padding: 10px 12px;
+            }
+        }
+        
+        .format-info i {
+            color: #ff9800;
+            margin-right: 5px;
+        }
+        
+        .translation-placeholder {
+            font-size: 18px;
+            color: #95a5a6;
+            font-style: italic;
+            opacity: 0.7;
+        }
+        
+        @media (max-width: 768px) {
+            .translation-placeholder {
+                font-size: 16px;
+            }
+        }
+        
+        .settings-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        
+        @media (max-width: 768px) {
+            .settings-section {
+                padding: 12px;
+            }
+        }
+        
+        .settings-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .voice-settings {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 768px) {
+            .voice-settings {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+        }
+        
+        .voice-select {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #d1d8e0;
+            background-color: white;
+            min-width: 200px;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .voice-select {
+                min-width: 100%;
+                padding: 10px;
+            }
+        }
+        
+        .voice-label {
+            font-weight: 500;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        /* Адаптивные улучшения для мобильных */
+        @media (max-width: 768px) {
+            .mobile-stack {
+                flex-direction: column !important;
+            }
+            
+            .mobile-full-width {
+                width: 100% !important;
+            }
+        }
+        
+        /* Предотвращение увеличения шрифта на iOS */
+        input, select, textarea, button {
+            font-size: 16px;
+        }
+        
+        /* Поддержка безопасных зон на iPhone X и новее */
+        @supports (padding: max(0px)) {
+            body {
+                padding-left: max(10px, env(safe-area-inset-left));
+                padding-right: max(10px, env(safe-area-inset-right));
+                padding-top: max(15px, env(safe-area-inset-top));
+                padding-bottom: max(15px, env(safe-area-inset-bottom));
+            }
+        }
+        
+        /* Улучшение для очень маленьких экранов */
+        @media (max-width: 320px) {
+            .container {
+                padding: 12px;
+            }
+            
+            h1 {
+                font-size: 20px;
+            }
+            
+            .word {
+                font-size: 26px;
+            }
+            
+            .translation-text {
+                font-size: 18px;
+            }
+            
+            button {
+                padding: 12px;
+                font-size: 14px;
+                min-height: 45px;
+            }
+            
+            .word-input {
+                font-size: 16px;
+                padding: 6px 8px;
+            }
+            
+            .word-input::placeholder {
+                font-size: 13px;
+            }
+            
+            .voice-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 22px;
+            }
+        }
+        
+        /* Кнопка озвучки в режиме тренировки речи */
+        .voice-pronunciation-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 5px 0;
+        }
+        
+        .voice-pronunciation-btn:hover:not(:disabled) {
+            background-color: #2980b9;
+        }
+        
+        .voice-pronunciation-btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .voice-pronunciation-btn.loading i {
+            animation: spin 1s linear infinite;
+        }
+        
+        /* Предотвращение выделения текста на мобильных */
+        .no-select {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        /* Улучшение для тач-устройств */
+        @media (hover: none) and (pointer: coarse) {
+            button, .mode-btn, .file-label, .pronunciation-btn {
+                min-height: 44px;
+            }
+            
+            .word-input {
+                min-height: 44px;
+            }
+        }
+        
+        /* Индикатор точности распознавания */
+        .confidence-indicator {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .confidence-bar {
+            width: 100px;
+            height: 6px;
+            background-color: #ecf0f1;
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            background-color: #2ecc71;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .confidence-fill.medium {
+            background-color: #f39c12;
+        }
+        
+        .confidence-fill.low {
+            background-color: #e74c3c;
+        }
+        
+        /* Экран загрузки */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Экран загрузки -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="spinner"></div>
+        <p>Загрузка...</p>
+    </div>
+
+    <div class="container" id="main-container" style="display: none;">
+        <div class="header">
+            <div class="user-info" id="user-info">
+                <div class="user-avatar" id="user-avatar">U</div>
+                <div class="user-details">
+                    <div class="user-name" id="user-name">Гость</div>
+                    <div class="user-experience">Опыт: <span id="user-experience-value">0</span></div>
+                </div>
+                <button class="logout-btn" id="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Выйти
+                </button>
+            </div>
+            
+            <h1>Тренажёр для заучивания слов</h1>
+            
+            <div class="auth-buttons" id="auth-buttons">
+                <button id="login-btn" style="background-color: #3498db; color: white; padding: 8px 15px; border-radius: 6px;">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Войти
+                </button>
+                <button id="register-btn" style="background-color: #2ecc71; color: white; padding: 8px 15px; border-radius: 6px; margin-left: 10px;">
+                    <i class="fas fa-user-plus"></i>
+                    Регистрация
+                </button>
+            </div>
+        </div>
+        
+        <div class="language-tags">
+            <div class="language-tag language-tag-rus">
+                <i class="fas fa-language"></i>
+                <span>Русский</span>
+            </div>
+            <div class="language-tag language-tag-tj">
+                <i class="fas fa-language"></i>
+                <span>Таджикский</span>
+            </div>
+        </div>
+        <p class="subtitle">Загрузите файл со словами для начала обучения. Выберите режим: Обычный, Сложный или Тренировка речи.</p>
+        
+        <div class="leaderboard-section">
+            <div class="leaderboard-title">
+                <i class="fas fa-trophy"></i>
+                Топ-5 игроков
+            </div>
+            <div class="leaderboard" id="leaderboard">
+                <div class="leaderboard-item">
+                    <div class="leaderboard-place">1</div>
+                    <div class="leaderboard-name">Загрузка...</div>
+                    <div class="leaderboard-exp">0</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="upload-section">
+            <div class="file-input-container">
+                <label for="file-input" class="file-label">
+                    <i class="fas fa-file-upload"></i>
+                    Выбрать файл CSV
+                </label>
+                <input type="file" id="file-input" accept=".csv">
+            </div>
+            
+            <div class="file-info">
+                Статус: <span id="file-status">не выбран ни один файл</span>
+            </div>
+            
+            <div class="format-info">
+                <i class="fas fa-info-circle"></i>
+                Формат файла: <strong>слово, русский перевод, таджикский перевод</strong>. 
+                Варианты переводов разделяются символом "/". Пример: <em>apple, яблоко, мева / себ</em>
+            </div>
+            
+            <div class="mode-buttons">
+                <button id="btn-mode-normal" class="mode-btn active" disabled>
+                    <i class="fas fa-star"></i>
+                    Обычный
+                </button>
+                <button id="btn-mode-hard" class="mode-btn hardmode" disabled>
+                    <i class="fas fa-keyboard"></i>
+                    Сложный
+                </button>
+                <button id="btn-mode-voice" class="mode-btn voicemode" disabled>
+                    <i class="fas fa-microphone"></i>
+                    Тренировка речи
+                </button>
+            </div>
+            
+            <div class="settings-section">
+                <div class="settings-title">
+                    <i class="fas fa-volume-up"></i>
+                    Настройки озвучки
+                </div>
+                <div class="voice-settings">
+                    <span class="voice-label">Голос:</span>
+                    <select id="voice-select" class="voice-select">
+                        <option value="">Загрузка голосов...</option>
+                    </select>
+                    <button id="btn-test-voice" class="btn-example" style="padding: 8px 16px; font-size: 14px;" disabled>
+                        <i class="fas fa-play"></i>
+                        Тест голоса
+                    </button>
+                </div>
+            </div>
+            
+            <div class="buttons">
+                <button id="btn-example" class="btn-example">
+                    <i class="fas fa-download"></i>
+                    Загрузить пример
+                </button>
+                <button id="btn-reset" class="btn-reset" disabled>
+                    <i class="fas fa-redo"></i>
+                    Сбросить всё
+                </button>
+            </div>
+        </div>
+        
+        <div id="alert-error" class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i>
+            Ошибка: Файл ещё не загружен! Пожалуйста, загрузите файл со словами.
+        </div>
+        
+        <div id="alert-info" class="alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            Загружаю файл, пожалуйста подождите...
+        </div>
+        
+        <div id="alert-success" class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            Поздравляем! Все слова изучены! Нажмите "Сбросить всё" для повторения или загрузите новый файл.
+        </div>
+        
+        <div id="loading" class="loading">
+            <i class="fas fa-spinner fa-spin"></i> Загрузка файла...
+        </div>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div><i class="fas fa-list"></i> Всего слов:</div>
+                <div class="stat-value" id="total-words">0</div>
+            </div>
+            <div class="stat-item">
+                <div><i class="fas fa-check-circle"></i> Изучено:</div>
+                <div class="stat-value" id="learned-words">0</div>
+            </div>
+            <div class="stat-item">
+                <div><i class="fas fa-clock"></i> Осталось:</div>
+                <div class="stat-value" id="remaining-words">0</div>
+            </div>
+            <div class="stat-item">
+                <div><i class="fas fa-times-circle"></i> Ошибок:</div>
+                <div class="stat-value" id="error-count">0</div>
+            </div>
+            <div class="stat-item">
+                <div><i class="fas fa-thumbs-up"></i> Правильно:</div>
+                <div class="stat-value" id="correct-count">0</div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <!-- Normal Mode: Show English word -->
+            <div id="normal-mode" class="word">
+                <span id="current-word">Apple</span>
+                <button class="pronunciation-btn" id="pronunciation-btn" title="Произнести слово" disabled>
+                    <i class="fas fa-volume-up"></i>
+                </button>
+            </div>
+            
+            <!-- Hard Mode: Show translation and input field -->
+            <div id="hard-mode" class="input-container" style="display: none;">
+                <div class="translation-container">
+                    <div class="translation-row">
+                        <div class="language-label language-label-rus">
+                            <i class="fas fa-flag"></i>
+                            RUS:
+                        </div>
+                        <div class="translation-text translation-text-visible" id="hard-translation-rus">
+                            <span>нажмите "Показать перевод"</span>
+                        </div>
+                    </div>
+                    <div class="translation-row">
+                        <div class="language-label language-label-tj">
+                            <i class="fas fa-flag"></i>
+                            TJ:
+                        </div>
+                        <div class="translation-text translation-text-visible" id="hard-translation-tj">
+                            <span>нажмите "Показать перевод"</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <input type="text" id="word-input" class="word-input" placeholder="Введите английское слово..." autocomplete="off" disabled>
+                <div id="input-feedback" class="input-feedback"></div>
+            </div>
+            
+            <!-- Voice Mode: Show translation and voice input -->
+            <div id="voice-mode" class="voice-input-container" style="display: none;">
+                <div class="translation-container">
+                    <div class="translation-row">
+                        <div class="language-label language-label-rus">
+                            <i class="fas fa-flag"></i>
+                            RUS:
+                        </div>
+                        <div class="translation-text translation-text-visible" id="voice-translation-rus">
+                            <span>нажмите "Показать перевод"</span>
+                        </div>
+                    </div>
+                    <div class="translation-row">
+                        <div class="language-label language-label-tj">
+                            <i class="fas fa-flag"></i>
+                            TJ:
+                        </div>
+                        <div class="translation-text translation-text-visible" id="voice-translation-tj">
+                            <span>нажмите "Показать перевод"</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="voice-instruction">
+                    <i class="fas fa-info-circle"></i>
+                    Нажмите кнопку микрофона, произнесите английское слово, затем нажмите "Проверить"
+                </div>
+                
+                <!-- Кнопка озвучки слова в режиме тренировки речи -->
+                <button id="voice-pronunciation-btn" class="voice-pronunciation-btn" title="Произнести слово" disabled>
+                    <i class="fas fa-volume-up"></i> Произнести слово
+                </button>
+                
+                <div id="voice-status" class="voice-status">
+                    <i class="fas fa-microphone"></i>
+                    <span id="voice-status-text">Нажмите кнопку микрофона и произнесите слово</span>
+                </div>
+                
+                <button id="voice-btn" class="voice-btn" disabled>
+                    <i class="fas fa-microphone"></i>
+                </button>
+                
+                <div id="voice-result" class="voice-result"></div>
+                
+                <div id="confidence-indicator" class="confidence-indicator" style="display: none;">
+                    <span>Точность распознавания:</span>
+                    <div class="confidence-bar">
+                        <div id="confidence-fill" class="confidence-fill"></div>
+                    </div>
+                    <span id="confidence-value">0%</span>
+                </div>
+            </div>
+            
+            <div class="translation-container" id="normal-translation">
+                <div class="translation-row">
+                    <div class="language-label language-label-rus">
+                        <i class="fas fa-flag"></i>
+                        RUS:
+                    </div>
+                    <div class="translation-text translation-text-rus translation-text-hidden" id="current-translation-rus">
+                        <span class="translation-placeholder">нажмите "Показать перевод"</span>
+                    </div>
+                </div>
+                <div class="translation-row">
+                    <div class="language-label language-label-tj">
+                        <i class="fas fa-flag"></i>
+                        TJ:
+                    </div>
+                    <div class="translation-text translation-text-tj translation-text-hidden" id="current-translation-tj">
+                        <span class="translation-placeholder">нажмите "Показать перевод"</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-buttons">
+                <button id="btn-know" class="btn-know" disabled>
+                    <i class="fas fa-check"></i>
+                    Знаю
+                </button>
+                <button id="btn-dont-know" class="btn-dont-know" disabled>
+                    <i class="fas fa-times"></i>
+                    Не знаю
+                </button>
+                <button id="btn-show-translation" class="btn-show-translation" disabled>
+                    <i class="fas fa-eye"></i>
+                    Показать перевод
+                </button>
+                <button id="btn-check-answer" class="btn-check-answer" style="display: none;" disabled>
+                    <i class="fas fa-check-double"></i>
+                    Проверить
+                </button>
+                <button id="btn-next" class="btn-next" style="display: none;" disabled>
+                    <i class="fas fa-arrow-right"></i>
+                    Следующее слово
+                </button>
+            </div>
+        </div>
+        
+        <div class="progress-container">
+            <div class="progress-label">
+                <span><i class="fas fa-chart-line"></i> Прогресс изучения</span>
+                <span id="progress-percent">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><i class="fas fa-lock"></i> Тренажёр для заучивания слов. Все данные хранятся локально в вашем браузере.</p>
+            <p><i class="fas fa-volume-up"></i> Озвучка работает через Web Speech API. Поддерживается в Chrome, Edge и Safari.</p>
+            <p><i class="fas fa-microphone"></i> <strong>Режим тренировки речи:</strong> Говорите английские слова в микрофон. Работает лучше в Chrome.</p>
+        </div>
+    </div>
+
+<script>
+    // Инициализация Supabase клиента
+    let supabaseMain = null;
+    
+    // Инициализация приложения
+    async function initApp() {
+        console.log('Инициализация приложения...');
+        
+        // Инициализируем Supabase
+        await initSupabase();
+        
+        if (!supabaseMain) {
+            console.warn('Supabase не загружен, продолжаем в оффлайн режиме');
+            // Показываем интерфейс без аутентификации
+            userInfo.style.display = 'none';
+            authButtons.style.display = 'flex';
+            
+            // Загружаем лидерборд с заглушкой
+            loadMockLeaderboard();
+        } else {
+            // Проверяем аутентификацию
+            const { data: { session } } = await supabaseMain.auth.getSession();
+            
+            if (session) {
+                // Пользователь авторизован
+                currentUser = session.user;
+                await loadUserProfile();
+                updateUserUI();
+                userInfo.style.display = 'flex';
+                authButtons.style.display = 'none';
+            } else {
+                // Пользователь не авторизован
+                userInfo.style.display = 'none';
+                authButtons.style.display = 'flex';
+            }
+            
+            // Загружаем лидерборд
+            await loadLeaderboard();
+        }
+        
+        // Инициализируем остальные компоненты
+        initSpeechSynthesis();
+        initSpeechRecognition();
+        loadSavedData();
+        
+        // Скрываем экран загрузки
+        setTimeout(() => {
+            loadingScreen.style.display = 'none';
+            mainContainer.style.display = 'block';
+        }, 500);
+    }
+    
+    // Функция инициализации Supabase
+    async function initSupabase() {
+        try {
+            if (window.supabase) {
+                const SUPABASE_URL = 'https://rgzvbwaizkrtswdiqjog.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnenZid2FpemtydHN3ZGlxam9nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2NzM4MzgsImV4cCI6MjA4MzI0OTgzOH0.LzFpWSG7pHoAbpIYyLsjbO8YIhh52U8p6hvmeaWILtI';
+                
+                supabaseMain = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('Supabase клиент создан успешно');
+                return true;
+            } else {
+                console.error('Библиотека Supabase не загружена!');
+                return false;
+            }
+        } catch (error) {
+            console.error('Ошибка создания Supabase клиента:', error);
+            return false;
+        }
+    }
+    
+    // Функция для загрузки заглушки лидерборда
+    function loadMockLeaderboard() {
+        const mockData = [
+            { username: 'Алексей', experience: 1250 },
+            { username: 'Мария', experience: 980 },
+            { username: 'Иван', experience: 750 },
+            { username: 'Анна', experience: 620 },
+            { username: 'Дмитрий', experience: 500 }
+        ];
+        updateLeaderboardUI(mockData);
+    }
+
+    // Элементы DOM
+    const loadingScreen = document.getElementById('loading-screen');
+    const mainContainer = document.getElementById('main-container');
+    const userInfo = document.getElementById('user-info');
+    const authButtons = document.getElementById('auth-buttons');
+    const userAvatar = document.getElementById('user-avatar');
+    const userName = document.getElementById('user-name');
+    const userExperienceValue = document.getElementById('user-experience-value');
+    const logoutBtn = document.getElementById('logout-btn');
+    const loginBtn = document.getElementById('login-btn');
+    const registerBtn = document.getElementById('register-btn');
+    const leaderboard = document.getElementById('leaderboard');
+    
+    const fileInput = document.getElementById('file-input');
+    const fileStatus = document.getElementById('file-status');
+    const btnExample = document.getElementById('btn-example');
+    const btnReset = document.getElementById('btn-reset');
+    const btnKnow = document.getElementById('btn-know');
+    const btnDontKnow = document.getElementById('btn-dont-know');
+    const btnShowTranslation = document.getElementById('btn-show-translation');
+    const btnCheckAnswer = document.getElementById('btn-check-answer');
+    const btnNext = document.getElementById('btn-next');
+    const pronunciationBtn = document.getElementById('pronunciation-btn');
+    const currentWord = document.getElementById('current-word');
+    const currentTranslationRus = document.getElementById('current-translation-rus');
+    const currentTranslationTj = document.getElementById('current-translation-tj');
+    const voiceSelect = document.getElementById('voice-select');
+    const btnTestVoice = document.getElementById('btn-test-voice');
+    const totalWords = document.getElementById('total-words');
+    const learnedWords = document.getElementById('learned-words');
+    const remainingWords = document.getElementById('remaining-words');
+    const errorCount = document.getElementById('error-count');
+    const correctCount = document.getElementById('correct-count');
+    const progressPercent = document.getElementById('progress-percent');
+    const progressFill = document.getElementById('progress-fill');
+    const alertError = document.getElementById('alert-error');
+    const alertInfo = document.getElementById('alert-info');
+    const alertSuccess = document.getElementById('alert-success');
+    const loading = document.getElementById('loading');
+    
+    // Mode elements
+    const btnModeNormal = document.getElementById('btn-mode-normal');
+    const btnModeHard = document.getElementById('btn-mode-hard');
+    const btnModeVoice = document.getElementById('btn-mode-voice');
+    const normalMode = document.getElementById('normal-mode');
+    const hardMode = document.getElementById('hard-mode');
+    const voiceMode = document.getElementById('voice-mode');
+    const normalTranslation = document.getElementById('normal-translation');
+    const wordInput = document.getElementById('word-input');
+    const inputFeedback = document.getElementById('input-feedback');
+    const hardTranslationRus = document.getElementById('hard-translation-rus');
+    const hardTranslationTj = document.getElementById('hard-translation-tj');
+    const voiceTranslationRus = document.getElementById('voice-translation-rus');
+    const voiceTranslationTj = document.getElementById('voice-translation-tj');
+    const voiceStatus = document.getElementById('voice-status');
+    const voiceStatusText = document.getElementById('voice-status-text');
+    const voiceBtn = document.getElementById('voice-btn');
+    const voiceResult = document.getElementById('voice-result');
+    const voicePronunciationBtn = document.getElementById('voice-pronunciation-btn');
+    const confidenceIndicator = document.getElementById('confidence-indicator');
+    const confidenceFill = document.getElementById('confidence-fill');
+    const confidenceValue = document.getElementById('confidence-value');
+
+    // Состояние приложения
+    let allWords = [];
+    let wordsToStudy = [];
+    let knownWords = [];
+    let unknownWords = [];
+    let errors = 0;
+    let correct = 0;
+    let isTranslationShown = false;
+    let currentWordObj = null;
+    let allWordsLearned = false;
+    let currentMode = 'normal'; // 'normal', 'hard', 'voice'
+    let currentUser = null;
+    let userExperience = 0;
+    
+    // Для озвучки
+    let speechSynthesis = window.speechSynthesis;
+    let voices = [];
+    let selectedVoice = null;
+    let isSpeaking = false;
+    
+    // Для распознавания речи
+    let recognition = null;
+    let isListening = false;
+    let voiceAnswerChecked = false;
+    let lastRecognizedText = '';
+    let lastConfidence = 0;
+    
+    // Загрузка профиля пользователя
+    async function loadUserProfile() {
+        try {
+            if (!supabaseMain || !currentUser) return;
+            
+            // Получаем профиль пользователя
+            const { data: profile, error } = await supabaseMain
+                .from('profiles')
+                .select('*')
+                .eq('id', currentUser.id)
+                .single();
+            
+            if (error && error.code === 'PGRST116') {
+                // Профиль не существует, создаем новый
+                await createUserProfile();
+            } else if (profile) {
+                // Обновляем опыт пользователя
+                userExperience = profile.experience || 0;
+                updateUserUI();
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки профиля:', error);
+        }
+    }
+    
+    // Создание профиля пользователя
+    async function createUserProfile() {
+        try {
+            if (!supabaseMain || !currentUser) return;
+            
+            const username = currentUser.email.split('@')[0];
+            const avatarText = username.charAt(0).toUpperCase();
+            
+            const { error } = await supabaseMain
+                .from('profiles')
+                .insert([
+                    {
+                        id: currentUser.id,
+                        username: username,
+                        full_name: currentUser.email,
+                        email: currentUser.email,
+                        experience: 0,
+                        last_login: new Date().toISOString()
+                    }
+                ]);
+            
+            if (error) throw error;
+            
+            userExperience = 0;
+            userAvatar.textContent = avatarText;
+            userName.textContent = username;
+            userExperienceValue.textContent = '0';
+        } catch (error) {
+            console.error('Ошибка создания профиля:', error);
+        }
+    }
+    
+    // Обновление опыта пользователя
+    async function updateUserExperience(points, reason = '') {
+        if (!currentUser || !supabaseMain) return;
+        
+        try {
+            // Получаем текущий профиль
+            const { data: profile, error: fetchError } = await supabaseMain
+                .from('profiles')
+                .select('experience')
+                .eq('id', currentUser.id)
+                .single();
+            
+            if (fetchError) throw fetchError;
+            
+            const newExperience = (profile.experience || 0) + points;
+            
+            // Обновляем опыт в базе данных
+            const { error: updateError } = await supabaseMain
+                .from('profiles')
+                .update({ 
+                    experience: newExperience,
+                    last_login: new Date().toISOString()
+                })
+                .eq('id', currentUser.id);
+            
+            if (updateError) throw updateError;
+            
+            // Обновляем локальное состояние
+            userExperience = newExperience;
+            updateUserUI();
+            
+            console.log(`Начислено ${points} опыта. Причина: ${reason}`);
+            
+            // Обновляем лидерборд
+            await loadLeaderboard();
+            
+        } catch (error) {
+            console.error('Ошибка обновления опыта:', error);
+        }
+    }
+    
+    // Загрузка лидерборда
+    async function loadLeaderboard() {
+        try {
+            if (!supabaseMain) return;
+            
+            const { data: profiles, error } = await supabaseMain
+                .from('profiles')
+                .select('username, experience')
+                .order('experience', { ascending: false })
+                .limit(5);
+            
+            if (error) throw error;
+            
+            updateLeaderboardUI(profiles);
+        } catch (error) {
+            console.error('Ошибка загрузки лидерборда:', error);
+            loadMockLeaderboard();
+        }
+    }
+    
+    // Обновление UI лидерборда
+    function updateLeaderboardUI(profiles) {
+        if (!profiles || profiles.length === 0) {
+            leaderboard.innerHTML = `
+                <div class="leaderboard-item">
+                    <div class="leaderboard-place">-</div>
+                    <div class="leaderboard-name">Нет данных</div>
+                    <div class="leaderboard-exp">0</div>
+                </div>
+            `;
+            return;
+        }
+        
+        leaderboard.innerHTML = '';
+        
+        profiles.forEach((profile, index) => {
+            const place = index + 1;
+            const name = profile.username || 'Аноним';
+            const exp = profile.experience || 0;
+            
+            const leaderboardItem = document.createElement('div');
+            leaderboardItem.className = 'leaderboard-item';
+            leaderboardItem.innerHTML = `
+                <div class="leaderboard-place">${place}</div>
+                <div class="leaderboard-name">${name}</div>
+                <div class="leaderboard-exp">${exp}</div>
+            `;
+            
+            // Выделяем текущего пользователя
+            if (currentUser && profile.username === currentUser.email.split('@')[0]) {
+                leaderboardItem.style.backgroundColor = '#e3f2fd';
+                leaderboardItem.style.borderColor = '#3498db';
+            }
+            
+            leaderboard.appendChild(leaderboardItem);
+        });
+    }
+    
+    // Обновление UI пользователя
+    function updateUserUI() {
+        if (!currentUser) return;
+        
+        const username = currentUser.email.split('@')[0];
+        const avatarText = username.charAt(0).toUpperCase();
+        
+        userAvatar.textContent = avatarText;
+        userName.textContent = username;
+        userExperienceValue.textContent = userExperience.toString();
+    }
+    
+    // Выход из системы
+    async function logout() {
+        try {
+            if (supabaseMain) {
+                const { error } = await supabaseMain.auth.signOut();
+                if (error) throw error;
+            }
+            
+            // Сбрасываем состояние
+            currentUser = null;
+            userExperience = 0;
+            
+            // Обновляем UI
+            userInfo.style.display = 'none';
+            authButtons.style.display = 'flex';
+            
+            // Сбрасываем данные тренажера
+            resetTrainingData();
+            
+            // Перезагружаем лидерборд
+            if (supabaseMain) {
+                await loadLeaderboard();
+            } else {
+                loadMockLeaderboard();
+            }
+            
+            console.log('Выход выполнен успешно');
+        } catch (error) {
+            console.error('Ошибка выхода:', error);
+        }
+    }
+    
+    // Сброс данных тренажера
+    function resetTrainingData() {
+        allWords = [];
+        wordsToStudy = [];
+        knownWords = [];
+        unknownWords = [];
+        errors = 0;
+        correct = 0;
+        isTranslationShown = false;
+        currentWordObj = null;
+        allWordsLearned = false;
+        
+        currentWord.textContent = "Загрузите файл";
+        hideTranslation();
+        wordInput.value = '';
+        wordInput.classList.remove('correct', 'incorrect');
+        inputFeedback.textContent = '';
+        inputFeedback.className = 'input-feedback';
+        voiceResult.textContent = '';
+        voiceResult.className = 'voice-result';
+        voiceStatusText.textContent = 'Нажмите кнопку микрофона и произнесите слово';
+        voiceStatus.className = 'voice-status';
+        voiceBtn.classList.remove('recording');
+        
+        fileStatus.textContent = 'не выбран ни один файл';
+        fileStatus.style.color = '#e74c3c';
+        
+        switchMode('normal');
+        updateStats();
+    }
+    
+    // Инициализация Web Speech API (синтез)
+    function initSpeechSynthesis() {
+        function loadVoices() {
+            voices = speechSynthesis.getVoices();
+            
+            voiceSelect.innerHTML = '';
+            
+            if (voices.length === 0) {
+                voiceSelect.innerHTML = '<option value="">Голоса не найдены</option>';
+                voiceSelect.disabled = true;
+                btnTestVoice.disabled = true;
+                return;
+            }
+            
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Выберите голос (авто)';
+            voiceSelect.appendChild(defaultOption);
+            
+            let englishVoices = [];
+            let russianVoices = [];
+            let otherVoices = [];
+            
+            voices.forEach((voice, index) => {
+                const lang = voice.lang.toLowerCase();
+                
+                if (lang.startsWith('en')) {
+                    englishVoices.push({ voice, index });
+                } else if (lang.startsWith('ru')) {
+                    russianVoices.push({ voice, index });
+                } else {
+                    otherVoices.push({ voice, index });
+                }
+            });
+            
+            if (englishVoices.length > 0) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = 'Английские голоса';
+                
+                englishVoices.forEach(({ voice, index }) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = `${voice.name} (${voice.lang})`;
+                    optgroup.appendChild(option);
+                });
+                
+                voiceSelect.appendChild(optgroup);
+            }
+            
+            if (russianVoices.length > 0) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = 'Русские голоса';
+                
+                russianVoices.forEach(({ voice, index }) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = `${voice.name} (${voice.lang})`;
+                    optgroup.appendChild(option);
+                });
+                
+                voiceSelect.appendChild(optgroup);
+            }
+            
+            if (otherVoices.length > 0) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = 'Другие голоса';
+                
+                otherVoices.forEach(({ voice, index }) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = `${voice.name} (${voice.lang})`;
+                    optgroup.appendChild(option);
+                });
+                
+                voiceSelect.appendChild(optgroup);
+            }
+            
+            voiceSelect.disabled = false;
+            btnTestVoice.disabled = false;
+            
+            const defaultEnglishVoice = voices.find(voice => 
+                voice.lang.startsWith('en') && voice.default
+            ) || voices.find(voice => voice.lang.startsWith('en'));
+            
+            if (defaultEnglishVoice) {
+                const voiceIndex = voices.indexOf(defaultEnglishVoice);
+                voiceSelect.value = voiceIndex;
+                selectedVoice = defaultEnglishVoice;
+            }
+        }
+        
+        loadVoices();
+        speechSynthesis.onvoiceschanged = loadVoices;
+    }
+    
+    // Инициализация Web Speech API (распознавание)
+    function initSpeechRecognition() {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            console.warn('Распознавание речи не поддерживается в этом браузере');
+            voiceStatusText.textContent = 'Голосовой ввод не поддерживается в вашем браузере. Используйте Chrome для лучшей совместимости.';
+            voiceBtn.disabled = true;
+            voicePronunciationBtn.disabled = true;
+            return false;
+        }
+        
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+        recognition.maxAlternatives = 5;
+        
+        recognition.onstart = function() {
+            console.log('Начало распознавания речи');
+            isListening = true;
+            voiceBtn.classList.add('recording');
+            voiceStatus.classList.add('recording');
+            voiceStatusText.textContent = 'Слушаю... Говорите четко!';
+            voiceResult.textContent = '';
+            voiceResult.className = 'voice-result';
+            voicePronunciationBtn.disabled = true;
+            confidenceIndicator.style.display = 'none';
+        };
+        
+        recognition.onresult = function(event) {
+            console.log('Результат распознавания:', event);
+            isListening = false;
+            voiceBtn.classList.remove('recording');
+            voiceStatus.classList.remove('recording');
+            voicePronunciationBtn.disabled = false;
+            
+            const result = event.results[0][0];
+            let transcript = result.transcript.trim();
+            
+            transcript = transcript.replace(/[.,!?;:]+$/g, '');
+            const confidence = result.confidence || 0;
+            
+            console.log('Распознано:', transcript, 'Уверенность:', confidence);
+            
+            lastRecognizedText = transcript;
+            lastConfidence = confidence;
+            
+            voiceResult.textContent = transcript;
+            voiceStatusText.textContent = 'Распознано. Нажмите "Проверить" для проверки ответа.';
+            
+            if (confidence !== undefined && confidence > 0) {
+                showConfidenceIndicator(confidence);
+            } else {
+                confidenceIndicator.style.display = 'none';
+            }
+            
+            btnCheckAnswer.disabled = false;
+        };
+        
+        recognition.onerror = function(event) {
+            console.error('Ошибка распознавания:', event.error);
+            isListening = false;
+            voiceBtn.classList.remove('recording');
+            voiceStatus.classList.remove('recording');
+            voicePronunciationBtn.disabled = false;
+            
+            if (event.error === 'not-allowed') {
+                voiceStatusText.textContent = 'Доступ к микрофону запрещен. Разрешите доступ в настройках браузера.';
+            } else if (event.error === 'no-speech') {
+                voiceStatusText.textContent = 'Речь не распознана. Попробуйте еще раз и говорите четче';
+            } else if (event.error === 'audio-capture') {
+                voiceStatusText.textContent = 'Микрофон не найден. Подключите микрофон и попробуйте снова';
+            } else if (event.error === 'network') {
+                voiceStatusText.textContent = 'Проблема с сетью. Проверьте подключение к интернету';
+            } else {
+                voiceStatusText.textContent = `Ошибка: ${event.error}. Попробуйте еще раз`;
+            }
+        };
+        
+        recognition.onend = function() {
+            console.log('Распознавание завершено');
+            isListening = false;
+            voiceBtn.classList.remove('recording');
+            voiceStatus.classList.remove('recording');
+            voicePronunciationBtn.disabled = false;
+            
+            if (!voiceResult.textContent) {
+                voiceStatusText.textContent = 'Распознавание завершено. Нажмите кнопку еще раз';
+            }
+        };
+        
+        return true;
+    }
+    
+    // Показать индикатор точности распознавания
+    function showConfidenceIndicator(confidence) {
+        if (confidence === undefined || confidence === null) {
+            console.warn('Confidence не определен');
+            confidenceIndicator.style.display = 'none';
+            return;
+        }
+        
+        confidence = Math.max(0, Math.min(1, confidence));
+        const percent = Math.round(confidence * 100);
+        
+        console.log(`Confidence: ${confidence}, Percent: ${percent}%`);
+        
+        confidenceValue.textContent = `${percent}%`;
+        confidenceFill.style.width = `${percent}%`;
+        
+        if (percent >= 70) {
+            confidenceFill.className = 'confidence-fill';
+            confidenceValue.style.color = '#27ae60';
+        } else if (percent >= 40) {
+            confidenceFill.className = 'confidence-fill medium';
+            confidenceValue.style.color = '#f39c12';
+        } else {
+            confidenceFill.className = 'confidence-fill low';
+            confidenceValue.style.color = '#e74c3c';
+        }
+        
+        confidenceIndicator.style.display = 'flex';
+    }
+    
+    // Произнести слово
+    function speakWord(text, lang = 'en-US') {
+        if (isSpeaking) {
+            speechSynthesis.cancel();
+        }
+        
+        if (!speechSynthesis || !text) return;
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        utterance.lang = lang;
+        utterance.rate = 0.9;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+        
+        if (selectedVoice) {
+            utterance.voice = selectedVoice;
+        }
+        
+        utterance.onstart = function() {
+            isSpeaking = true;
+            pronunciationBtn.classList.add('loading');
+            voicePronunciationBtn.classList.add('loading');
+        };
+        
+        utterance.onend = function() {
+            isSpeaking = false;
+            pronunciationBtn.classList.remove('loading');
+            voicePronunciationBtn.classList.remove('loading');
+        };
+        
+        utterance.onerror = function(event) {
+            isSpeaking = false;
+            pronunciationBtn.classList.remove('loading');
+            voicePronunciationBtn.classList.remove('loading');
+            console.error('Ошибка при озвучке:', event);
+        };
+        
+        speechSynthesis.speak(utterance);
+    }
+    
+    // Начать/остановить запись голоса
+    function toggleVoiceRecording() {
+        if (!recognition || isListening) return;
+        
+        try {
+            recognition.start();
+            voiceResult.textContent = '';
+            voiceResult.className = 'voice-result';
+            voiceAnswerChecked = false;
+            btnCheckAnswer.disabled = true;
+            btnNext.disabled = true;
+            confidenceIndicator.style.display = 'none';
+        } catch (error) {
+            console.error('Ошибка начала записи:', error);
+            voiceStatusText.textContent = 'Ошибка начала записи. Попробуйте еще раз';
+        }
+    }
+    
+    // Проверить голосовой ответ
+    async function checkVoiceAnswer() {
+        if (!currentWordObj || voiceAnswerChecked || !lastRecognizedText) return;
+        
+        console.log('Проверка голосового ответа:');
+        console.log('Распознано:', lastRecognizedText);
+        console.log('Ожидалось:', currentWordObj.word);
+        console.log('Confidence:', lastConfidence);
+        
+        const userAnswer = lastRecognizedText.trim();
+        const correctWord = currentWordObj.word;
+        
+        const isCorrect = compareWordsWithFlexibility(userAnswer, correctWord);
+        
+        if (isCorrect) {
+            // Правильный ответ
+            voiceResult.classList.add('correct');
+            voiceStatusText.textContent = '✓ Правильно! Отличное произношение!';
+            
+            // Добавить слово в изученные
+            if (!knownWords.includes(currentWordObj.word)) {
+                knownWords.push(currentWordObj.word);
+                
+                // Начисляем опыт за правильный ответ в режиме речи
+                if (currentUser && supabaseMain) {
+                    await updateUserExperience(50, 'Правильный ответ в режиме речи');
+                }
+            }
+            
+            correct++;
+            
+            // Убрать слово из неизвестных
+            const unknownIndex = unknownWords.indexOf(currentWordObj.word);
+            if (unknownIndex !== -1) {
+                unknownWords.splice(unknownIndex, 1);
+            }
+            
+            // Убрать слово из списка для изучения
+            const studyIndex = wordsToStudy.findIndex(w => w.word === currentWordObj.word);
+            if (studyIndex !== -1) {
+                wordsToStudy.splice(studyIndex, 1);
+            }
+            
+            // Сохранить и обновить
+            saveData();
+            updateStats();
+            checkIfAllWordsLearned();
+            
+            voiceAnswerChecked = true;
+            voiceBtn.disabled = true;
+            voicePronunciationBtn.disabled = true;
+            btnCheckAnswer.disabled = true;
+            btnNext.disabled = false;
+            
+        } else {
+            // Неправильный ответ
+            voiceResult.classList.add('incorrect');
+            voiceStatusText.textContent = `✗ Неправильно. Правильно: "${correctWord}". Попробуйте еще раз или послушайте произношение.`;
+            
+            errors++;
+            
+            // Добавить слово в неизвестные
+            if (!unknownWords.includes(currentWordObj.word)) {
+                unknownWords.push(currentWordObj.word);
+            }
+            
+            // Убрать слово из изученных
+            const knownIndex = knownWords.indexOf(currentWordObj.word);
+            if (knownIndex !== -1) {
+                knownWords.splice(knownIndex, 1);
+            }
+            
+            // Добавить слово обратно в конец списка для изучения
+            const studyIndex = wordsToStudy.findIndex(w => w.word === currentWordObj.word);
+            if (studyIndex !== -1) {
+                wordsToStudy.splice(studyIndex, 1);
+            }
+            wordsToStudy.push(currentWordObj);
+            
+            // Сохранить и обновить
+            saveData();
+            updateStats();
+            
+            voiceAnswerChecked = true;
+            btnNext.disabled = true;
+            voiceBtn.disabled = false;
+            voicePronunciationBtn.disabled = false;
+        }
+    }
+    
+    // Функция для форматирования перевода с пробелами между вариантами
+    function formatTranslation(translation) {
+        if (!translation || translation.trim() === '') return '';
+        return translation.split('/').map(part => part.trim()).join(' / ');
+    }
+    
+    // Сравнение слов (case insensitive) - ТОЧНОЕ СОВПАДЕНИЕ
+    function compareWords(word1, word2) {
+        return word1.toLowerCase().trim() === word2.toLowerCase().trim();
+    }
+    
+    // Проверка омофонов (слов, которые звучат одинаково)
+    function checkHomophones(word1, word2) {
+        const homophoneGroups = [
+            ['there', 'their', 'they\'re'],
+            ['to', 'too', 'two'],
+            ['your', 'you\'re'],
+            ['its', 'it\'s'],
+            ['here', 'hear'],
+            ['see', 'sea'],
+            ['right', 'write'],
+            ['buy', 'by', 'bye'],
+            ['weather', 'whether'],
+            ['which', 'witch'],
+            ['where', 'wear', 'ware']
+        ];
+        
+        word1 = word1.toLowerCase();
+        word2 = word2.toLowerCase();
+        
+        for (const group of homophoneGroups) {
+            if (group.includes(word1) && group.includes(word2)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    // Простая функция для получения основы слова
+    function getWordStem(word) {
+        const exceptions = {
+            'children': 'child',
+            'men': 'man',
+            'women': 'woman',
+            'feet': 'foot',
+            'teeth': 'tooth',
+            'mice': 'mouse',
+            'geese': 'goose',
+            'people': 'person'
+        };
+        
+        const lowerWord = word.toLowerCase();
+        if (exceptions[lowerWord]) {
+            return exceptions[lowerWord];
+        }
+        
+        const endings = [
+            'ing', 'ed', 's', 'es', 'er', 'est', 
+            'ly', 'able', 'ible', 'ment', 'ness',
+            'ion', 'tion', 'ation', 'ition'
+        ];
+        
+        let stem = lowerWord;
+        
+        for (const ending of endings) {
+            if (stem.endsWith(ending) && stem.length > ending.length + 2) {
+                stem = stem.slice(0, -ending.length);
+                break;
+            }
+        }
+        
+        return stem;
+    }
+    
+    // Расстояние Левенштейна для сравнения строк
+    function levenshteinDistance(a, b) {
+        const matrix = [];
+        
+        for (let i = 0; i <= b.length; i++) {
+            matrix[i] = [i];
+        }
+        
+        for (let j = 0; j <= a.length; j++) {
+            matrix[0][j] = j;
+        }
+        
+        for (let i = 1; i <= b.length; i++) {
+            for (let j = 1; j <= a.length; j++) {
+                const cost = a.charAt(j - 1) === b.charAt(i - 1) ? 0 : 1;
+                matrix[i][j] = Math.min(
+                    matrix[i - 1][j] + 1,
+                    matrix[i][j - 1] + 1,
+                    matrix[i - 1][j - 1] + cost
+                );
+                
+                if (i > 1 && j > 1 && 
+                    a.charAt(j - 1) === b.charAt(i - 2) && 
+                    a.charAt(j - 2) === b.charAt(i - 1)) {
+                    matrix[i][j] = Math.min(matrix[i][j], matrix[i - 2][j - 2] + cost);
+                }
+            }
+        }
+        
+        return matrix[b.length][a.length];
+    }
+    
+    // Улучшенное сравнение слов для голосового режима
+    function compareWordsWithFlexibility(userAnswer, correctWord) {
+        userAnswer = userAnswer.toLowerCase().trim();
+        correctWord = correctWord.toLowerCase().trim();
+        
+        userAnswer = userAnswer.replace(/[.,!?;:]/g, '');
+        correctWord = correctWord.replace(/[.,!?;:]/g, '');
+        
+        if (userAnswer === correctWord) return true;
+        
+        const cleanUserAnswer = userAnswer.replace(/^(a|an|the|to|please|say|i|me)\s+/i, '').trim();
+        const cleanCorrectWord = correctWord.replace(/^(a|an|the)\s+/i, '').trim();
+        
+        if (cleanUserAnswer === cleanCorrectWord) return true;
+        
+        const userStem = getWordStem(cleanUserAnswer);
+        const correctStem = getWordStem(cleanCorrectWord);
+        
+        if (userStem === correctStem) return true;
+        
+        if (checkHomophones(userAnswer, correctWord)) {
+            return true;
+        }
+        
+        const distance = levenshteinDistance(userAnswer, correctWord);
+        const maxLength = Math.max(userAnswer.length, correctWord.length);
+        const similarity = 1 - distance / maxLength;
+        
+        if (similarity > 0.75) {
+            console.log(`Частичное совпадение: ${userAnswer} vs ${correctWord} (${Math.round(similarity * 100)}%)`);
+            return true;
+        }
+        
+        return false;
+    }
+    
+    // Переключение режима
+    function switchMode(mode) {
+        if (allWords.length === 0 && mode !== 'normal') {
+            showErrorAlert();
+            return;
+        }
+        
+        currentMode = mode;
+        
+        btnModeNormal.classList.remove('active');
+        btnModeHard.classList.remove('active');
+        btnModeVoice.classList.remove('active');
+        
+        normalMode.style.display = 'none';
+        hardMode.style.display = 'none';
+        voiceMode.style.display = 'none';
+        normalTranslation.style.display = 'none';
+        
+        btnKnow.style.display = 'none';
+        btnDontKnow.style.display = 'none';
+        btnShowTranslation.style.display = 'none';
+        btnCheckAnswer.style.display = 'none';
+        btnNext.style.display = 'none';
+        
+        if (mode === 'normal') {
+            btnModeNormal.classList.add('active');
+            normalMode.style.display = 'flex';
+            normalTranslation.style.display = 'flex';
+            
+            btnKnow.style.display = 'flex';
+            btnDontKnow.style.display = 'flex';
+            btnShowTranslation.style.display = 'flex';
+            
+            hideTranslation();
+        } else if (mode === 'hard') {
+            btnModeHard.classList.add('active');
+            hardMode.style.display = 'flex';
+            
+            btnCheckAnswer.style.display = 'flex';
+            btnNext.style.display = 'flex';
+            
+            if (currentWordObj) {
+                showHardModeTranslation();
+            }
+        } else if (mode === 'voice') {
+            btnModeVoice.classList.add('active');
+            voiceMode.style.display = 'flex';
+            
+            btnCheckAnswer.style.display = 'flex';
+            btnNext.style.display = 'flex';
+            
+            if (currentWordObj) {
+                showVoiceModeTranslation();
+            }
+        }
+        
+        localStorage.setItem('currentMode', mode);
+        updateUIForCurrentWord();
+        enableButtons();
+    }
+    
+    // Показать перевод для hard mode
+    function showHardModeTranslation() {
+        if (!currentWordObj) return;
+        
+        const formattedTranslationRus = formatTranslation(currentWordObj.translationRus);
+        const formattedTranslationTj = formatTranslation(currentWordObj.translationTj);
+        
+        hardTranslationRus.textContent = formattedTranslationRus || '—';
+        hardTranslationTj.textContent = formattedTranslationTj || '—';
+        
+        wordInput.value = '';
+        wordInput.classList.remove('correct', 'incorrect');
+        inputFeedback.textContent = '';
+        inputFeedback.className = 'input-feedback';
+        
+        wordInput.disabled = false;
+        wordInput.focus();
+        
+        btnCheckAnswer.disabled = false;
+        btnNext.disabled = true;
+    }
+    
+    // Показать перевод для voice mode
+    function showVoiceModeTranslation() {
+        if (!currentWordObj) return;
+        
+        const formattedTranslationRus = formatTranslation(currentWordObj.translationRus);
+        const formattedTranslationTj = formatTranslation(currentWordObj.translationTj);
+        
+        voiceTranslationRus.textContent = formattedTranslationRus || '—';
+        voiceTranslationTj.textContent = formattedTranslationTj || '—';
+        
+        voiceResult.textContent = '';
+        voiceResult.className = 'voice-result';
+        voiceStatusText.textContent = 'Нажмите кнопку микрофона и произнесите слово';
+        voiceStatus.className = 'voice-status';
+        voiceBtn.classList.remove('recording');
+        
+        voiceBtn.disabled = false;
+        voicePronunciationBtn.disabled = false;
+        btnCheckAnswer.disabled = true;
+        btnNext.disabled = true;
+        voiceAnswerChecked = false;
+        confidenceIndicator.style.display = 'none';
+        
+        if (recognition && isListening) {
+            recognition.stop();
+        }
+    }
+    
+    // Проверить ответ в hard mode
+    async function checkHardModeAnswer() {
+        if (!currentWordObj || !wordInput.value.trim()) return;
+        
+        const userAnswer = wordInput.value.trim();
+        const correctWord = currentWordObj.word;
+        
+        if (compareWords(userAnswer, correctWord)) {
+            wordInput.classList.remove('incorrect');
+            wordInput.classList.add('correct');
+            inputFeedback.textContent = '✓ Правильно!';
+            inputFeedback.className = 'input-feedback correct';
+            
+            if (!knownWords.includes(currentWordObj.word)) {
+                knownWords.push(currentWordObj.word);
+                
+                // Начисляем опыт за правильный ответ в сложном режиме
+                if (currentUser && supabaseMain) {
+                    await updateUserExperience(20, 'Правильный ответ в сложном режиме');
+                }
+            }
+            
+            correct++;
+            
+            const unknownIndex = unknownWords.indexOf(currentWordObj.word);
+            if (unknownIndex !== -1) {
+                unknownWords.splice(unknownIndex, 1);
+            }
+            
+            const studyIndex = wordsToStudy.findIndex(w => w.word === currentWordObj.word);
+            if (studyIndex !== -1) {
+                wordsToStudy.splice(studyIndex, 1);
+            }
+            
+            wordInput.disabled = true;
+            btnCheckAnswer.disabled = true;
+            btnNext.disabled = false;
+            
+            saveData();
+            updateStats();
+            checkIfAllWordsLearned();
+            
+        } else {
+            wordInput.classList.remove('correct');
+            wordInput.classList.add('incorrect');
+            inputFeedback.textContent = `✗ Неправильно. Правильно: ${correctWord}.`;
+            inputFeedback.className = 'input-feedback incorrect';
+            
+            errors++;
+            
+            if (!unknownWords.includes(currentWordObj.word)) {
+                unknownWords.push(currentWordObj.word);
+            }
+            
+            const knownIndex = knownWords.indexOf(currentWordObj.word);
+            if (knownIndex !== -1) {
+                knownWords.splice(knownIndex, 1);
+            }
+            
+            const studyIndex = wordsToStudy.findIndex(w => w.word === currentWordObj.word);
+            if (studyIndex !== -1) {
+                wordsToStudy.splice(studyIndex, 1);
+            }
+            wordsToStudy.push(currentWordObj);
+            
+            wordInput.disabled = true;
+            btnCheckAnswer.disabled = true;
+            btnNext.disabled = false;
+            
+            saveData();
+            updateStats();
+        }
+    }
+    
+    // Обновить UI для текущего слова
+    function updateUIForCurrentWord() {
+        if (!currentWordObj) return;
+        
+        if (currentMode === 'normal') {
+            currentWord.textContent = currentWordObj.word;
+            hideTranslation();
+        } else if (currentMode === 'hard') {
+            showHardModeTranslation();
+        } else if (currentMode === 'voice') {
+            showVoiceModeTranslation();
+        }
+    }
+    
+    // Загрузка сохраненных данных из localStorage
+    function loadSavedData() {
+        const savedAllWords = localStorage.getItem('allWords');
+        const savedKnownWords = localStorage.getItem('knownWords');
+        const savedUnknownWords = localStorage.getItem('unknownWords');
+        const savedErrors = localStorage.getItem('errors');
+        const savedCorrect = localStorage.getItem('correct');
+        const savedWordsToStudy = localStorage.getItem('wordsToStudy');
+        const savedVoiceIndex = localStorage.getItem('selectedVoiceIndex');
+        const savedMode = localStorage.getItem('currentMode');
+        
+        if (savedAllWords) {
+            allWords = JSON.parse(savedAllWords);
+            knownWords = JSON.parse(savedKnownWords) || [];
+            unknownWords = JSON.parse(savedUnknownWords) || [];
+            wordsToStudy = JSON.parse(savedWordsToStudy) || [];
+            errors = parseInt(savedErrors) || 0;
+            correct = parseInt(savedCorrect) || 0;
+            
+            if (savedVoiceIndex && voices.length > savedVoiceIndex) {
+                voiceSelect.value = savedVoiceIndex;
+                selectedVoice = voices[savedVoiceIndex];
+            }
+            
+            let modeToSwitch = savedMode === 'hard' ? 'hard' : (savedMode === 'voice' ? 'voice' : 'normal');
+            if (allWords.length === 0) {
+                modeToSwitch = 'normal';
+            }
+            switchMode(modeToSwitch);
+            
+            fileStatus.textContent = 'файл загружен из сохраненных данных';
+            fileStatus.style.color = '#27ae60';
+            
+            updateStats();
+            showNextWord();
+            enableButtons();
+            
+            checkIfAllWordsLearned();
+        }
+    }
+    
+    // Сохранение данных в localStorage
+    function saveData() {
+        localStorage.setItem('allWords', JSON.stringify(allWords));
+        localStorage.setItem('knownWords', JSON.stringify(knownWords));
+        localStorage.setItem('unknownWords', JSON.stringify(unknownWords));
+        localStorage.setItem('wordsToStudy', JSON.stringify(wordsToStudy));
+        localStorage.setItem('errors', errors.toString());
+        localStorage.setItem('correct', correct.toString());
+        localStorage.setItem('currentMode', currentMode);
+        
+        if (selectedVoice) {
+            const voiceIndex = voices.indexOf(selectedVoice);
+            if (voiceIndex !== -1) {
+                localStorage.setItem('selectedVoiceIndex', voiceIndex.toString());
+            }
+        }
+    }
+    
+    // Обработчик ввода по Enter в hard mode
+    wordInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && currentMode === 'hard') {
+            checkHardModeAnswer();
+        }
+    });
+    
+    // Обработчик кнопки голоса
+    voiceBtn.addEventListener('click', toggleVoiceRecording);
+    
+    // Обработчик кнопки озвучки в режиме тренировки речи
+    voicePronunciationBtn.addEventListener('click', function() {
+        if (allWords.length === 0 || !currentWordObj || isSpeaking) return;
+        
+        const word = currentWordObj.word;
+        speakWord(word, 'en-US');
+    });
+    
+    // Обработчик кнопки проверки
+    btnCheckAnswer.addEventListener('click', function() {
+        if (currentMode === 'voice') {
+            checkVoiceAnswer();
+        } else if (currentMode === 'hard') {
+            checkHardModeAnswer();
+        }
+    });
+    
+    // Обработчик выхода
+    logoutBtn.addEventListener('click', logout);
+    
+    // Обработчик кнопок авторизации
+    loginBtn.addEventListener('click', function() {
+        window.location.href = 'login.html';
+    });
+    
+    registerBtn.addEventListener('click', function() {
+        window.location.href = 'register.html';
+    });
+    
+    // Предотвращение масштабирования при двойном тапе на кнопках
+    document.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    });
+    
+    // Предотвращение выделения текста при долгом тапе
+    document.addEventListener('touchstart', function(e) {
+        if (e.touches.length > 1) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+    
+    // Фикс для iOS Safari
+    document.addEventListener('touchmove', function(e) {
+        if (e.touches.length > 1) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+    
+    // Обработчики режимов
+    btnModeNormal.addEventListener('click', function() {
+        if (!this.disabled) {
+            switchMode('normal');
+        }
+    });
+    
+    btnModeHard.addEventListener('click', function() {
+        if (!this.disabled) {
+            switchMode('hard');
+        }
+    });
+    
+    btnModeVoice.addEventListener('click', function() {
+        if (!this.disabled) {
+            switchMode('voice');
+        }
+    });
+    
+    // Обработчик кнопки следующего слова
+    btnNext.addEventListener('click', function() {
+        showNextWord();
+    });
+    
+    // Обработчик выбора голоса
+    voiceSelect.addEventListener('change', function() {
+        const voiceIndex = parseInt(this.value);
+        if (!isNaN(voiceIndex) && voices.length > voiceIndex) {
+            selectedVoice = voices[voiceIndex];
+            saveData();
+        } else {
+            selectedVoice = null;
+        }
+    });
+    
+    // Обработчик кнопки тестирования голоса
+    btnTestVoice.addEventListener('click', function() {
+        speakWord('Hello, this is a test of the pronunciation feature.', 'en-US');
+    });
+    
+    // Обработчик кнопки произношения
+    pronunciationBtn.addEventListener('click', function() {
+        if (allWords.length === 0 || !currentWordObj || isSpeaking) return;
+        
+        const word = currentWordObj.word;
+        speakWord(word, 'en-US');
+    });
+    
+    // Обработчик выбора файла
+    fileInput.addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+            const file = e.target.files[0];
+            fileStatus.textContent = `загружен файл: ${file.name}`;
+            fileStatus.style.color = '#27ae60';
+            
+            loading.style.display = 'block';
+            alertInfo.style.display = 'block';
+            alertSuccess.style.display = 'none';
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                setTimeout(function() {
+                    processCSV(event.target.result);
+                    loading.style.display = 'none';
+                    alertInfo.style.display = 'none';
+                }, 800);
+            };
+            reader.readAsText(file);
+        }
+    });
+    
+    // Обработчик кнопки "Загрузить пример"
+    btnExample.addEventListener('click', function() {
+        const exampleCSV = `Apple,яблоко,мева / себ
+Banana,банан,банан
+Computer,компьютер,компьютер / компютер
+Dog,собака,саг
+Elephant,слон,фил
+Flower,цветок,гул
+Guitar,гитара,гитара
+House,дом,хона / хона
+Internet,интернет,интернет / шабака
+Journey,путешествие,сафар / сайр
+Knowledge,знание,дониш / илм
+Language,язык,забон
+Mountain,гора,кӯҳ
+Night,ночь,шаб
+Ocean,океан,уқёнус
+Peace,мир,сулҳ / оромӣ
+Question,вопрос,савол
+River,река,дарё / рӯд
+Sun,солнце,офтоб / хуршед
+Tree,дерево,дарахт
+Umbrella,зонт,чатр / соябон
+Victory,победа,ғалаба
+Water,вода,об
+Xylophone,ксилофон,ксилофон
+Yellow,жёлтый,зард
+Zoo,зоопарк,ҳайвонот`;
+        
+        fileStatus.textContent = 'загружен пример файла';
+        fileStatus.style.color = '#27ae60';
+        
+        loading.style.display = 'block';
+        alertInfo.style.display = 'block';
+        alertSuccess.style.display = 'none';
+        
+        setTimeout(function() {
+            processCSV(exampleCSV);
+            loading.style.display = 'none';
+            alertInfo.style.display = 'none';
+        }, 800);
+    });
+    
+    // Обработчик кнопки "Сбросить всё"
+    btnReset.addEventListener('click', function() {
+        if (confirm("Вы уверены, что хотите сбросить весь прогресс? Все данные будут удалены.")) {
+            allWords = [];
+            wordsToStudy = [];
+            knownWords = [];
+            unknownWords = [];
+            errors = 0;
+            correct = 0;
+            isTranslationShown = false;
+            currentWordObj = null;
+            allWordsLearned = false;
+            
+            localStorage.clear();
+            
+            currentWord.textContent = 'Apple';
+            hideTranslation();
+            wordInput.value = '';
+            wordInput.classList.remove('correct', 'incorrect');
+            inputFeedback.textContent = '';
+            inputFeedback.className = 'input-feedback';
+            voiceResult.textContent = '';
+            voiceResult.className = 'voice-result';
+            voiceStatusText.textContent = 'Нажмите кнопку микрофона и произнесите слово';
+            voiceStatus.className = 'voice-status';
+            voiceBtn.classList.remove('recording');
+            
+            fileStatus.textContent = 'не выбран ни один файл';
+            fileStatus.style.color = '#e74c3c';
+            
+            switchMode('normal');
+            
+            alertSuccess.style.display = 'none';
+            updateStats();
+        }
+    });
+    
+    // Скрыть перевод (для normal mode)
+    function hideTranslation() {
+        currentTranslationRus.innerHTML = '<span class="translation-placeholder">нажмите "Показать перевод"</span>';
+        currentTranslationTj.innerHTML = '<span class="translation-placeholder">нажмите "Показать перевод"</span>';
+        currentTranslationRus.classList.remove('translation-text-visible');
+        currentTranslationRus.classList.add('translation-text-hidden');
+        currentTranslationTj.classList.remove('translation-text-visible');
+        currentTranslationTj.classList.add('translation-text-hidden');
+        isTranslationShown = false;
+    }
+    
+    // Показать перевод (для normal mode)
+    function showTranslation() {
+        if (!currentWordObj) return;
+        
+        const formattedTranslationRus = formatTranslation(currentWordObj.translationRus);
+        const formattedTranslationTj = formatTranslation(currentWordObj.translationTj);
+        
+        currentTranslationRus.textContent = formattedTranslationRus || '—';
+        currentTranslationTj.textContent = formattedTranslationTj || '—';
+        
+        currentTranslationRus.classList.remove('translation-text-hidden');
+        currentTranslationTj.classList.remove('translation-text-hidden');
+        currentTranslationRus.classList.add('translation-text-visible');
+        currentTranslationTj.classList.add('translation-text-visible');
+        
+        isTranslationShown = true;
+    }
+    
+    // Обработчик кнопки "Знаю"
+    btnKnow.addEventListener('click', async function() {
+        if (allWords.length === 0 || !currentWordObj) {
+            showErrorAlert();
+            return;
+        }
+        
+        if (allWordsLearned) {
+            alertSuccess.style.display = 'block';
+            return;
+        }
+        
+        if (!knownWords.includes(currentWordObj.word)) {
+            knownWords.push(currentWordObj.word);
+            
+            // Начисляем опыт за "Знаю" только если слово было новым
+            if (currentUser && supabaseMain) {
+                await updateUserExperience(10, 'Нажал "Знаю"');
+            }
+        }
+        
+        correct++;
+        
+        const unknownIndex = unknownWords.indexOf(currentWordObj.word);
+        if (unknownIndex !== -1) {
+            unknownWords.splice(unknownIndex, 1);
+        }
+        
+        const studyIndex = wordsToStudy.findIndex(w => w.word === currentWordObj.word);
+        if (studyIndex !== -1) {
+            wordsToStudy.splice(studyIndex, 1);
+        }
+        
+        hideTranslation();
+        saveData();
+        updateStats();
+        checkIfAllWordsLearned();
+        showNextWord();
+    });
+    
+    // Обработчик кнопки "Не знаю"
+    btnDontKnow.addEventListener('click', function() {
+        if (allWords.length === 0 || !currentWordObj) {
+            showErrorAlert();
+            return;
+        }
+        
+        if (allWordsLearned) {
+            alertSuccess.style.display = 'block';
+            return;
+        }
+        
+        errors++;
+        
+        if (!unknownWords.includes(currentWordObj.word)) {
+            unknownWords.push(currentWordObj.word);
+        }
+        
+        const knownIndex = knownWords.indexOf(currentWordObj.word);
+        if (knownIndex !== -1) {
+            knownWords.splice(knownIndex, 1);
+        }
+        
+        const studyIndex = wordsToStudy.findIndex(w => w.word === currentWordObj.word);
+        if (studyIndex !== -1) {
+            wordsToStudy.splice(studyIndex, 1);
+        }
+        wordsToStudy.push(currentWordObj);
+        
+        hideTranslation();
+        saveData();
+        updateStats();
+        checkIfAllWordsLearned();
+        showNextWord();
+    });
+    
+    // Обработчик кнопки "Показать перевод"
+    btnShowTranslation.addEventListener('click', function() {
+        if (allWords.length === 0 || !currentWordObj) {
+            showErrorAlert();
+            return;
+        }
+        
+        if (allWordsLearned) {
+            alertSuccess.style.display = 'block';
+            return;
+        }
+        
+        showTranslation();
+    });
+    
+    // Обработка CSV файла
+    function processCSV(csvData) {
+        const lines = csvData.split('\n');
+        allWords = [];
+        
+        lines.forEach(line => {
+            line = line.trim();
+            if (line) {
+                const parts = line.split(',');
+                if (parts.length >= 3) {
+                    const word = parts[0].trim();
+                    const translationRus = parts[1].trim();
+                    const translationTj = parts[2].trim();
+                    allWords.push({ word, translationRus, translationTj });
+                } else if (parts.length === 2) {
+                    const word = parts[0].trim();
+                    const translationRus = parts[1].trim();
+                    const translationTj = '';
+                    allWords.push({ word, translationRus, translationTj });
+                }
+            }
+        });
+        
+        if (allWords.length > 0) {
+            if (knownWords.length === 0 && unknownWords.length === 0) {
+                errors = 0;
+                correct = 0;
+            }
+            
+            wordsToStudy = [];
+            
+            unknownWords.forEach(word => {
+                const wordObj = allWords.find(w => compareWords(w.word, word));
+                if (wordObj) {
+                    wordsToStudy.push(wordObj);
+                }
+            });
+            
+            allWords.forEach(wordObj => {
+                if (!knownWords.some(w => compareWords(w, wordObj.word)) && 
+                    !unknownWords.some(w => compareWords(w, wordObj.word))) {
+                    wordsToStudy.push(wordObj);
+                }
+            });
+            
+            if (wordsToStudy.length === 0) {
+                wordsToStudy = [...allWords];
+            }
+            
+            updateStats();
+            showNextWord();
+            enableButtons();
+            saveData();
+            checkIfAllWordsLearned();
+        } else {
+            alert("Файл не содержит данных в правильном формате.");
+        }
+    }
+    
+    // Проверка, все ли слова изучены
+    function checkIfAllWordsLearned() {
+        allWordsLearned = knownWords.length === allWords.length && allWords.length > 0;
+        if (allWordsLearned) {
+            alertSuccess.style.display = 'block';
+            disableLearningButtons();
+        } else {
+            alertSuccess.style.display = 'none';
+        }
+        return allWordsLearned;
+    }
+    
+    // Отключить кнопки изучения
+    function disableLearningButtons() {
+        btnKnow.disabled = true;
+        btnDontKnow.disabled = true;
+        btnShowTranslation.disabled = true;
+        pronunciationBtn.disabled = true;
+        btnCheckAnswer.disabled = true;
+        wordInput.disabled = true;
+        voiceBtn.disabled = true;
+        voicePronunciationBtn.disabled = true;
+        btnNext.disabled = true;
+    }
+    
+    // Показать следующее слово
+    function showNextWord() {
+        if (allWords.length === 0) {
+            currentWord.textContent = "Загрузите файл";
+            hideTranslation();
+            currentWordObj = null;
+            pronunciationBtn.disabled = true;
+            wordInput.disabled = true;
+            btnCheckAnswer.disabled = true;
+            voiceBtn.disabled = true;
+            voicePronunciationBtn.disabled = true;
+            btnNext.disabled = true;
+            return;
+        }
+        
+        if (checkIfAllWordsLearned()) {
+            currentWord.textContent = "Все слова изучены!";
+            hideTranslation();
+            currentWordObj = null;
+            pronunciationBtn.disabled = true;
+            wordInput.disabled = true;
+            btnCheckAnswer.disabled = true;
+            voiceBtn.disabled = true;
+            voicePronunciationBtn.disabled = true;
+            btnNext.disabled = true;
+            return;
+        }
+        
+        if (wordsToStudy.length === 0) {
+            unknownWords.forEach(word => {
+                const wordObj = allWords.find(w => compareWords(w.word, word));
+                if (wordObj && !wordsToStudy.some(w => compareWords(w.word, wordObj.word))) {
+                    wordsToStudy.push(wordObj);
+                }
+            });
+            
+            allWords.forEach(wordObj => {
+                if (!knownWords.some(w => compareWords(w, wordObj.word)) && 
+                    !unknownWords.some(w => compareWords(w, wordObj.word))) {
+                    if (!wordsToStudy.some(w => compareWords(w.word, wordObj.word))) {
+                        wordsToStudy.push(wordObj);
+                    }
+                }
+            });
+        }
+        
+        if (wordsToStudy.length > 0) {
+            const randomIndex = Math.floor(Math.random() * wordsToStudy.length);
+            currentWordObj = wordsToStudy[randomIndex];
+            
+            wordsToStudy.splice(randomIndex, 1);
+            
+            updateUIForCurrentWord();
+            
+            if (currentMode === 'normal') {
+                pronunciationBtn.disabled = false;
+            } else if (currentMode === 'hard') {
+                wordInput.disabled = false;
+                btnCheckAnswer.disabled = false;
+                btnNext.disabled = true;
+                setTimeout(() => {
+                    wordInput.focus();
+                }, 100);
+            } else if (currentMode === 'voice') {
+                voiceBtn.disabled = false;
+                voicePronunciationBtn.disabled = false;
+                btnCheckAnswer.disabled = true;
+                btnNext.disabled = true;
+            }
+        } else {
+            currentWord.textContent = "Нет слов для изучения";
+            hideTranslation();
+            currentWordObj = null;
+            pronunciationBtn.disabled = true;
+            wordInput.disabled = true;
+            btnCheckAnswer.disabled = true;
+            voiceBtn.disabled = true;
+            voicePronunciationBtn.disabled = true;
+            btnNext.disabled = true;
+        }
+    }
+    
+    // Включение кнопок после загрузки файла
+    function enableButtons() {
+        if (allWords.length === 0) {
+            disableLearningButtons();
+            btnReset.disabled = true;
+            btnModeNormal.disabled = true;
+            btnModeHard.disabled = true;
+            btnModeVoice.disabled = true;
+            return;
+        }
+        
+        if (checkIfAllWordsLearned()) {
+            disableLearningButtons();
+            btnReset.disabled = false;
+            btnModeNormal.disabled = false;
+            btnModeHard.disabled = false;
+            btnModeVoice.disabled = false;
+        } else {
+            btnReset.disabled = false;
+            btnModeNormal.disabled = false;
+            btnModeHard.disabled = false;
+            btnModeVoice.disabled = false;
+            
+            if (currentMode === 'normal') {
+                btnKnow.disabled = false;
+                btnDontKnow.disabled = false;
+                btnShowTranslation.disabled = false;
+                pronunciationBtn.disabled = false;
+                btnCheckAnswer.disabled = true;
+                wordInput.disabled = true;
+                voiceBtn.disabled = true;
+                voicePronunciationBtn.disabled = true;
+                btnNext.disabled = true;
+            } else if (currentMode === 'hard') {
+                btnKnow.disabled = true;
+                btnDontKnow.disabled = true;
+                btnShowTranslation.disabled = true;
+                pronunciationBtn.disabled = true;
+                btnCheckAnswer.disabled = false;
+                wordInput.disabled = false;
+                voiceBtn.disabled = true;
+                voicePronunciationBtn.disabled = true;
+                btnNext.disabled = true;
+                setTimeout(() => {
+                    wordInput.focus();
+                }, 100);
+            } else if (currentMode === 'voice') {
+                btnKnow.disabled = true;
+                btnDontKnow.disabled = true;
+                btnShowTranslation.disabled = true;
+                pronunciationBtn.disabled = true;
+                btnCheckAnswer.disabled = true;
+                wordInput.disabled = true;
+                voiceBtn.disabled = false;
+                voicePronunciationBtn.disabled = false;
+                btnNext.disabled = true;
+            }
+        }
+    }
+    
+    // Показать сообщение об ошибке
+    function showErrorAlert() {
+        alertError.style.display = 'block';
+        setTimeout(() => {
+            alertError.style.display = 'none';
+        }, 3000);
+    }
+    
+    // Обновление статистики
+    function updateStats() {
+        const total = allWords.length;
+        const learned = knownWords.length;
+        const remaining = total - learned;
+        
+        totalWords.textContent = total;
+        learnedWords.textContent = learned;
+        remainingWords.textContent = remaining;
+        errorCount.textContent = errors;
+        correctCount.textContent = correct;
+        
+        const progress = total > 0 ? Math.round((learned / total) * 100) : 0;
+        progressPercent.textContent = `${progress}%`;
+        progressFill.style.width = `${progress}%`;
+    }
+    
+    // Инициализация приложения при загрузке
+    document.addEventListener('DOMContentLoaded', initApp);
+</script>
+</body>
+</html>
